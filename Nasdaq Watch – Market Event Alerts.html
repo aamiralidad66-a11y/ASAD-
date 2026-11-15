@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nasdaq Watch – Market Event Alerts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F5F7;--sf:#fff;--ink:#12151C;--mute:#626B7D;--line:#DCE0E8;--red:#D4303B;--redbg:#FDECEE;--grn:#0E8A56;--grnbg:#E5F6EE;--amb:#B26A00;--ambbg:#FFF3DC;--acc:#1F3FD6;--onacc:#fff;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C0F16;--sf:#151A25;--ink:#E9ECF4;--mute:#97A0B5;--line:#262D3F;--red:#FF6670;--redbg:#3A1A1F;--grn:#3FD491;--grnbg:#10301F;--amb:#FFB84D;--ambbg:#3A2A0C;--acc:#8EA2FF;--onacc:#0C0F16;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C0F16;--sf:#151A25;--ink:#E9ECF4;--mute:#97A0B5;--line:#262D3F;--red:#FF6670;--redbg:#3A1A1F;--grn:#3FD491;--grnbg:#10301F;--amb:#FFB84D;--ambbg:#3A2A0C;--acc:#8EA2FF;--onacc:#0C0F16;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:640px;margin:0 auto;padding:14px 16px 56px}
+button,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+h1{font-size:22px;margin:0;letter-spacing:-.02em}
+.sm{font-size:13px;color:var(--mute)}
+.btn{border:1px solid var(--line);background:var(--sf);border-radius:10px;padding:8px 12px;font-weight:600;min-height:40px}
+.btn.p{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+h2{font-size:17px;margin:26px 0 10px}
+.card{background:var(--sf);border:1px solid var(--line);border-left-width:5px;border-radius:12px;padding:14px;margin-bottom:10px}
+.card.bear{border-left-color:var(--red)}.card.bull{border-left-color:var(--grn)}.card.watch{border-left-color:var(--amb)}
+.badge{display:inline-block;font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px;margin-right:6px}
+.bear .badge.i{background:var(--redbg);color:var(--red)}.bull .badge.i{background:var(--grnbg);color:var(--grn)}.watch .badge.i{background:var(--ambbg);color:var(--amb)}
+.badge.s{border:1px solid var(--line);color:var(--mute);font-weight:600}
+.card h3{font-size:16px;margin:8px 0 4px;line-height:1.3}
+.card p{margin:4px 0;font-size:14px}
+.card a{color:var(--acc);font-size:13px}
+.new{animation:pulse 1.6s ease-out 1}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--acc)}100%{box-shadow:0 0 0 14px transparent}}
+@media (prefers-reduced-motion:reduce){.new{animation:none}}
+.up{background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.up b{display:block}
+.up .sc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:13px}
+.up .sc div{border-radius:8px;padding:6px 8px}
+.up .g{background:var(--grnbg)}.up .r{background:var(--redbg)}
+textarea{width:100%;min-height:84px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--sf);resize:vertical}
+.acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+#chat{margin-top:12px}
+.m{padding:10px 12px;border-radius:12px;margin-bottom:8px;font-size:14px;white-space:pre-wrap}
+.m.u{background:var(--acc);color:var(--onacc);margin-left:36px}
+.m.a{background:var(--sf);border:1px solid var(--line);margin-right:12px}
+#toast{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));max-width:616px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;display:none;z-index:20}
+.note{font-size:12px;color:var(--mute);margin-top:18px}
+</style>
+</head>
+<body>
+<div id="toast" role="alert"></div>
+<main>
+<header>
+  <h1>Nasdaq Watch</h1>
+  <button class="btn" id="notifBtn">Turn on alerts</button>
+</header>
+<div class="sm" id="asof">News snapshot: Nov 15, 2026</div>
+
+<h2>Market-moving alerts</h2>
+<div id="feed"></div>
+
+<h2>Coming up: what could move Nasdaq next</h2>
+<div id="up"></div>
+
+<h2>Ask the AI or check a headline</h2>
+<textarea id="q" placeholder="Paste a headline or article for a bullish/bearish read, or ask anything (e.g. “Why do rate hikes hurt tech stocks?”)"></textarea>
+<div class="acts">
+  <button class="btn p" id="analyze">Analyze as alert</button>
+  <button class="btn" id="ask">Ask AI</button>
+</div>
+<div id="chat" aria-live="polite"></div>
+
+<p class="note">Impact tags are estimates from reported news, not trade signals or financial advice. This page can’t watch the news on its own: alerts appear when you analyze a headline here, or when the snapshot is refreshed. Alerts only pop up while this page is open.</p>
+</main>
+<script>
+(function(){
+var NEWS=[
+{id:"n1",imp:"bear",sev:"High",t:"Nvidia CEO Jensen Huang is out, days before earnings",why:"Nvidia is the biggest weight in Nasdaq-100. Leadership uncertainty right before results raises the odds of a sharp move in NVDA and the chip sector.",eff:"Bearish pressure on NVDA and AI chip stocks; wider Nasdaq risk if the report disappoints.",src:"Kiplinger",url:"https://www.kiplinger.com/investing/stocks/nasdaq-drops-friday-on-nvidia-fallout-but-ends-the-week-up-stock-market-today",when:"Recent"},
+{id:"n2",imp:"bear",sev:"High",t:"Markets lean toward a December Fed rate hike after a jobs surprise",why:"October payrolls rose 165,000 versus about 62,000 expected. Strong jobs plus inflation worries make rate hikes likelier, and higher rates cut the value of growth and tech stocks.",eff:"Bearish for growth and tech (rate-sensitive). A cooler inflation reading would ease this.",src:"Day Trading Toolkit weekly outlook",url:"https://daytradingtoolkit.com/market-insights/weekly-market-insights-november-9-13-2026",when:"Week of Nov 9"},
+{id:"n3",imp:"bear",sev:"High",t:"Chip crash drives Nasdaq’s worst week since June",why:"The Nasdaq Composite fell 3.4% to 24,579.42 in the week to Nov 6 while the Dow fell only 0.9%, so money rotated away from tech.",eff:"Bearish trend context: tech under pressure, defensive sectors holding up.",src:"Day Trading Toolkit weekly outlook",url:"https://daytradingtoolkit.com/market-insights/weekly-market-insights-november-9-13-2026",when:"Week to Nov 6"},
+{id:"n4",imp:"watch",sev:"Medium",t:"Anthropic IPO is on this week’s earnings-preview radar",why:"I only have the headline of a Nov 13 preview mentioning it. A large AI listing can pull money toward or away from other AI stocks, depending on how it is received.",eff:"Unclear. Watch AI-related names for sentiment.",src:"InvestingLive",url:"https://investinglive.com/news/earnings-week-ahead-nvidia-without-jensen-anthropic-s-ipo-and-the-consumer-meets-a-hiking-fed/",when:"Nov 13"}
+];
+var UP=[
+{t:"Nvidia earnings (reported for around Nov 17; confirm the date)",lean:"Biggest single event for Nasdaq-100.",bull:"Strong guidance and calm leadership message: relief rally in chips and Nasdaq.",bear:"Weak guidance or more leadership questions: another leg down in AI/chip stocks."},
+{t:"November CPI inflation report",lean:"Inflation drives rate-hike odds.",bull:"Cooler than expected: hike odds fall, tech tends to rise.",bear:"Hotter than expected: hike odds rise, tech tends to fall."},
+{t:"December Fed meeting",lean:"Market already leans toward a hike.",bull:"Fed signals a pause: relief for growth stocks.",bear:"Hike with hawkish tone: more pressure on Nasdaq."}
+];
+var KEY="nasdaq-watch-v1",extra=[];
+try{extra=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){}
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var LBL={bear:"BEARISH · SELL PRESSURE",bull:"BULLISH · BUY PRESSURE",watch:"WATCH"};
+function card(a,isNew){
+  return '<article class="card '+a.imp+(isNew?" new":"")+'"><span class="badge i">'+LBL[a.imp]+'</span><span class="badge s">'+esc(a.sev)+' impact</span>'+
+  '<h3>'+esc(a.t)+'</h3><p>'+esc(a.why)+'</p><p><b>Nasdaq effect:</b> '+esc(a.eff)+'</p>'+
+  '<p class="sm">'+esc(a.when||"")+(a.src?" · "+(a.url?'<a href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer">'+esc(a.src)+'</a>':esc(a.src)):"")+'</p></article>';
+}
+function renderFeed(newId){
+  var all=extra.concat(NEWS);
+  $("feed").innerHTML=all.map(function(a){return card(a,a.id===newId)}).join("");
+}
+$("up").innerHTML=UP.map(function(u){return '<div class="up"><b>'+esc(u.t)+'</b><span class="sm">'+esc(u.lean)+'</span><div class="sc"><div class="g"><b>If bullish</b>'+esc(u.bull)+'</div><div class="r"><b>If bearish</b>'+esc(u.bear)+'</div></div></div>'}).join("");
+renderFeed();
+
+function toast(msg){var t=$("toast");t.textContent=msg;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},6000)}
+function notify(a){
+  var m=(a.imp==="bear"?"BEARISH: ":a.imp==="bull"?"BULLISH: ":"WATCH: ")+a.t;
+  toast(m);
+  try{if(window.Notification&&Notification.permission==="granted")new Notification("Nasdaq Watch",{body:m})}catch(e){}
+  try{if(navigator.vibrate)navigator.vibrate(200)}catch(e){}
+}
+$("notifBtn").onclick=function(){
+  try{
+    if(!window.Notification){toast("Phone notifications aren’t available here. In-app alerts still work.");return}
+    Notification.requestPermission().then(function(p){$("notifBtn").textContent=p==="granted"?"Alerts on":"Alerts blocked";toast(p==="granted"?"Alerts on while this page is open.":"Notifications blocked. In-app alerts still work.")});
+  }catch(e){toast("Notifications aren’t available here. In-app alerts still work.")}
+};
+
+var sample=null;
+function getSample(){
+  if(sample)return Promise.resolve(sample);
+  if(!window.claude||!window.claude.use)return Promise.resolve(null);
+  return window.claude.use("sample").then(function(s){sample=s;return s}).catch(function(){return null});
+}
+var CTX="You are the AI assistant inside Nasdaq Watch, built for a technical-analysis trader who trades Nasdaq stocks and has no fundamentals background. Explain simply, no jargon without a plain definition. You cannot browse the web: use only this snapshot and your own knowledge, and say when something may be outdated. Give impact as bullish or bearish pressure with reasoning and what could change it. Never promise outcomes; forecasts are estimates, not financial advice. Today is Nov 15, 2026. Snapshot: "+JSON.stringify(NEWS.map(function(n){return {headline:n.t,impact:n.imp,why:n.why}}))+" Upcoming: "+JSON.stringify(UP.map(function(u){return u.t}))+".";
+var hist=[];
+function addMsg(cls,txt){var d=document.createElement("div");d.className="m "+cls;d.textContent=txt;$("chat").appendChild(d);return d}
+function busy(b){$("ask").disabled=$("analyze").disabled=b}
+function unavailable(){addMsg("a","The AI isn’t available in this view. Open the page from its claude.ai link while signed in.")}
+$("ask").onclick=function(){
+  var q=$("q").value.trim();if(!q)return;
+  getSample().then(function(s){
+    if(!s){unavailable();return}
+    $("q").value="";addMsg("u",q);hist.push({role:"user",content:q});
+    var out=addMsg("a","Thinking…");busy(true);
+    var convo=hist.map(function(m){return (m.role==="user"?"Trader: ":"AI: ")+m.content}).join("\n");
+    return s(CTX+"\n\nConversation so far:\n"+convo+"\n\nReply as the AI, concise (under 180 words).",{cache:false,onText:function(r){out.textContent=r.text}})
+    .then(function(r){out.textContent=r.text;hist.push({role:"assistant",content:r.text})})
+    .catch(function(e){out.textContent=e&&e.code==="not_granted"?"AI access wasn’t allowed. Tap Ask AI again and accept the prompt.":"The AI couldn’t answer right now. Try again in a moment."})
+    .then(function(){busy(false)});
+  });
+};
+$("analyze").onclick=function(){
+  var q=$("q").value.trim();if(!q)return;
+  getSample().then(function(s){
+    if(!s){unavailable();return}
+    busy(true);var w=addMsg("a","Analyzing…");
+    var p=CTX+"\n\nAnalyze this headline or article for Nasdaq impact:\n\"\"\"\n"+q.slice(0,6000)+"\n\"\"\"\nReturn ONLY JSON: {\"imp\":\"bear\"|\"bull\"|\"watch\",\"sev\":\"High\"|\"Medium\"|\"Low\",\"t\":\"short headline\",\"why\":\"2 plain sentences on why it matters\",\"eff\":\"1 sentence on likely Nasdaq effect and what would change it\"}";
+    return s.json(p,{cache:false}).then(function(r){
+      if(!r||["bear","bull","watch"].indexOf(r.imp)<0)throw new Error("bad");
+      var a={id:"x"+Date.now(),imp:r.imp,sev:r.sev||"Medium",t:r.t||"Custom alert",why:r.why||"",eff:r.eff||"",src:"Your analysis",when:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
+      extra.unshift(a);extra=extra.slice(0,30);
+      try{localStorage.setItem(KEY,JSON.stringify(extra))}catch(e){}
+      $("q").value="";w.remove();renderFeed(a.id);notify(a);window.scrollTo({top:0,behavior:"smooth"});
+    }).catch(function(){w.textContent="Couldn’t read that analysis. Try again, or paste a longer piece of text."})
+    .then(function(){busy(false)});
+  });
+};
+try{if(window.Notification&&Notification.permission==="granted")$("notifBtn").textContent="Alerts on"}catch(e){}
+})();
+</script>
+</body>
+</html>
